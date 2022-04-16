@@ -1,0 +1,4 @@
+pretrained_models/**/*.json
+*.txt
+*.bin
+*.pt
