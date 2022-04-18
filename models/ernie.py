@@ -1,19 +1,21 @@
 """
-@FileName ：bert-wwm-ext.py
+@FileName ：ernie.py
 @Author ：Zhiyong Yuan
-@Date ：2022/4/18 8:51 
+@Date ：2022/4/18 14:35 
 @Tools ：PyCharm
-@Description：中文bert-wwm-ext预训练模型
+@Description：
 """
+# coding: UTF-8
 import torch
 import torch.nn as nn
 from transformers import BertTokenizer,  BertForMultipleChoice
+
 
 class Config(object):
 
     """配置参数"""
     def __init__(self, dataset):
-        self.model_name = 'bert-wwm-ext'
+        self.model_name = 'ernie'
         self.train_path = 'dataset/' + dataset + '/BiRdQA_zh_train.csv'                                # 训练集
         self.dev_path = 'dataset/' + dataset + '/BiRdQA_zh_dev.csv'                                    # 验证集
         self.test_path = 'dataset/' + dataset + '/BiRdQA_zh_test.csv'                                  # 测试集
@@ -25,9 +27,9 @@ class Config(object):
         self.batch_size = 2                                           # mini-batch大小
         self.pad_size = 256                                              # 每句话处理成的长度(短填长切)
         self.learning_rate = 2e-5                                       # 学习率
-        self.pretrained_path = 'pretrained_models/chinese-bert-wwm-ext'
+        self.pretrained_path = 'pretrained_models/ernie-1.0'
         self.tokenizer = BertTokenizer.from_pretrained(self.pretrained_path)
-        self.weight_decay = 0.1
+        self.weight_decay = 1e-4
         self.seed = 42
 
 
