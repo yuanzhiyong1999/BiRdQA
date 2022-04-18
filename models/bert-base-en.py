@@ -8,7 +8,7 @@ class Config(object):
 
     """配置参数"""
     def __init__(self, dataset):
-        self.model_name = 'bert_base_en'
+        self.model_name = 'bert-base-en'
         self.train_path = 'dataset/' + dataset + '/BiRdQA_en_train.csv'                                # 训练集
         self.dev_path = 'dataset/' + dataset + '/BiRdQA_en_dev.csv'                                    # 验证集
         self.test_path = 'dataset/' + dataset + '/BiRdQA_en_test.csv'                                  # 测试集
@@ -19,7 +19,7 @@ class Config(object):
         self.num_epochs = 3                                             # epoch数
         self.batch_size = 2                                           # mini-batch大小
         self.pad_size = 256                                              # 每句话处理成的长度(短填长切)
-        self.learning_rate = 2e-5                                       # 学习率
+        self.learning_rate = 5e-4                                       # 学习率
         self.pretrained_path = 'pretrained_models/bert-base-uncased'
         self.tokenizer = BertTokenizer.from_pretrained(self.pretrained_path)
         self.weight_decay = 1e-4

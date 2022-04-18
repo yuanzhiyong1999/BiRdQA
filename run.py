@@ -8,7 +8,7 @@ import argparse
 from utils import build_dataset, build_iterator, get_time_dif
 
 parser = argparse.ArgumentParser(description='Riddle dataset')
-parser.add_argument('--model', type=str, required=True, help='choose a model: bert_base_zh, bert_base_en')
+parser.add_argument('--model', type=str, required=True, help='choose a model: bert-base-zh, bert-base-en, bert-wwm-ext')
 parser.add_argument('--dataset', type=str, required=True, help='choose a dataset: BiRdQA, riddlesense')
 args = parser.parse_args()
 

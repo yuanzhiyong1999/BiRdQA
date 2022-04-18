@@ -6,7 +6,7 @@ from tqdm import tqdm
 from transformers import get_cosine_schedule_with_warmup
 
 # 权重初始化，默认xavier
-def init_network(model, method='xavier', exclude='embedding', seed=123):
+def init_network(model, method='xavier', exclude='embedding', seed=42):
     for name, w in model.named_parameters():
         if exclude not in name:
             if len(w.size()) < 2:
@@ -48,7 +48,6 @@ def train(config, model, train_iter, dev_iter):
     scaler = GradScaler()
     optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
     scheduler = get_cosine_schedule_with_warmup(optimizer, len(train_iter), config.num_epochs * len(train_iter))
-    # get_cosine_schedule_with_warmup策略，学习率先warmup一个epoch，然后cos式下降
     criterion = nn.CrossEntropyLoss()
     bast_acc = 0
 
@@ -79,12 +78,12 @@ def train(config, model, train_iter, dev_iter):
             loop.set_postfix(acc=metric[1] / metric[2], loss=metric[0] / metric[2])
 
         eva_acc = evaluate(model, dev_iter, config.device)
-        print(f"TrainEpoch:[{epoch + 1}/{config.num_epochs}], 验证acc = {eva_acc}")
+        print(f"TrainEpoch:[{epoch + 1}/{config.num_epochs}], evaluate-acc = {eva_acc}")
 
         if bast_acc < eva_acc:
             bast_acc = eva_acc
             torch.save(model.state_dict(), config.save_path)
-            print("模型已保存！")
+            print("Model Saved!")
 
 
 def evaluate(model, data_iter, device):
@@ -113,6 +112,6 @@ def test(config, model, test_iter):
     model.load_state_dict(torch.load(config.save_path))
     model.eval()
     test_acc = evaluate(model, test_iter, config.device)
-    print("测试acc：", test_acc)
+    print("test-acc:", test_acc)
 
 

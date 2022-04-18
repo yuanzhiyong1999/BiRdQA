@@ -8,7 +8,7 @@ class Config(object):
 
     """配置参数"""
     def __init__(self, dataset):
-        self.model_name = 'bert_base_zh'
+        self.model_name = 'bert-base-zh'
         self.train_path = 'dataset/' + dataset + '/BiRdQA_zh_train.csv'                                # 训练集
         self.dev_path = 'dataset/' + dataset + '/BiRdQA_zh_dev.csv'                                    # 验证集
         self.test_path = 'dataset/' + dataset + '/BiRdQA_zh_test.csv'                                  # 测试集
