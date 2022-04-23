@@ -132,8 +132,8 @@ def t5_train(config, model, train_iter, dev_iter):
             X = X.to(config.device)
             y = y.to(config.device)
             with autocast():
-                loss = model(X, y)
-                predict = config.tokenizer.decode(predict, skip_special_tokens=True)
+                loss, predict = model(X, y)
+                # predict = config.tokenizer.decode(predict, skip_special_tokens=True)
             optimizer.zero_grad()
             scaler.scale(loss).backward()
             scaler.step(optimizer)

@@ -15,6 +15,7 @@ class Config(object):
 
     """配置参数"""
     def __init__(self, dataset):
+        self.model_type = 'zh'  # 不同的类型 不同的数据处理方法
         self.model_name = 'ernie'
         self.train_path = 'dataset/' + dataset + '/BiRdQA_zh_train.csv'                                # 训练集
         self.dev_path = 'dataset/' + dataset + '/BiRdQA_zh_dev.csv'                                    # 验证集

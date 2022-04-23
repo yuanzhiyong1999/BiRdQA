@@ -13,8 +13,8 @@ from transformers import T5Tokenizer, T5ForConditionalGeneration
 
 class Config(object):
     """配置参数"""
-
     def __init__(self, dataset):
+        self.model_type = 't5'  # 不同的类型 不同的数据处理方法
         self.model_name = 'unifiedqa-t5-large'
         self.train_path = 'dataset/' + dataset + '/BiRdQA_en_train.csv'  # 训练集
         self.dev_path = 'dataset/' + dataset + '/BiRdQA_en_dev.csv'  # 验证集

@@ -1,4 +1,10 @@
-# coding: UTF-8
+"""
+@FileName ：roberta-large.py
+@Author ：Zhiyong Yuan
+@Date ：2022/4/23 20:26 
+@Tools ：PyCharm
+@Description：
+"""
 import torch
 import torch.nn as nn
 from transformers import BertTokenizer, BertForMultipleChoice
@@ -9,7 +15,7 @@ class Config(object):
 
     def __init__(self, dataset):
         self.model_type = 'en'  # 不同的类型 不同的数据处理方法
-        self.model_name = 'bert-base-en'
+        self.model_name = 'roberta-large'
         self.train_path = 'dataset/' + dataset + '/BiRdQA_en_train.csv'  # 训练集
         self.dev_path = 'dataset/' + dataset + '/BiRdQA_en_dev.csv'  # 验证集
         self.test_path = 'dataset/' + dataset + '/BiRdQA_en_test.csv'  # 测试集
@@ -21,7 +27,7 @@ class Config(object):
         self.batch_size = 2  # mini-batch大小
         self.pad_size = 256  # 每句话处理成的长度(短填长切)
         self.learning_rate = 1e-5  # 学习率
-        self.pretrained_path = 'pretrained_models/bert-base-uncased'
+        self.pretrained_path = 'pretrained_models/roberta-large'
         self.tokenizer = BertTokenizer.from_pretrained(self.pretrained_path)
         self.weight_decay = 1e-4
         self.seed = 42
