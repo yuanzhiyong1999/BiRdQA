@@ -89,7 +89,6 @@ def train(config, model, train_iter, dev_iter):
 def evaluate(model, data_iter, device):
     model.eval()
     metric = Accumulator(2)
-
     with torch.no_grad():
         loop = tqdm(enumerate(data_iter), total=len(data_iter))
         for i, (X, y) in loop:
@@ -114,4 +113,75 @@ def test(config, model, test_iter):
     test_acc = evaluate(model, test_iter, config.device)
     print("test-acc:", test_acc)
 
+def t5_accuracy(y_hat, y):
+    y_hat = y_hat.argmax(dim=1)
+    num_correct = torch.eq(y_hat, y).sum().float().item()
+    return num_correct
+
+def t5_train(config, model, train_iter, dev_iter):
+    scaler = GradScaler()
+    optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
+    scheduler = get_cosine_schedule_with_warmup(optimizer, len(train_iter), config.num_epochs * len(train_iter))
+    bast_acc = 0
+
+    model.train()
+    for epoch in range(config.num_epochs):
+        metric = Accumulator(3)
+        loop = tqdm(enumerate(train_iter), total=len(train_iter))
+        for i, (X, y) in loop:
+            X = X.to(config.device)
+            y = y.to(config.device)
+            with autocast():
+                loss = model(X, y)
+                predict = config.tokenizer.decode(predict, skip_special_tokens=True)
+            optimizer.zero_grad()
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+            scheduler.step()
+
+            train_loss = loss.item()
+            train_acc = t5_accuracy(predict, y)
+
+            metric.add(train_loss, train_acc, y.shape[0])
+
+            loop.set_description(f'TrainEpoch: [{epoch + 1}/{config.num_epochs}]')
+            loop.set_postfix(acc=metric[1] / metric[2], loss=metric[0] / metric[2])
+
+        eva_acc = t5_evaluate(model, dev_iter, config.device)
+        print(f"TrainEpoch:[{epoch + 1}/{config.num_epochs}], evaluate-acc = {eva_acc}")
+
+        if bast_acc < eva_acc:
+            bast_acc = eva_acc
+            torch.save(model.state_dict(), config.save_path)
+            print("Model Saved!")
+
+
+def t5_evaluate(model, data_iter, device):
+    model.eval()
+    metric = Accumulator(2)
+
+    with torch.no_grad():
+        loop = tqdm(enumerate(data_iter), total=len(data_iter))
+        for i, (X, y) in loop:
+            X = X.to(device)
+            y = y.to(device)
+
+            with autocast():
+                outputs = model(X)
+
+            acc = accuracy(outputs, y)
+            metric.add(acc, y.shape[0])
+
+            loop.set_description(f'evaluate: ')
+            loop.set_postfix(acc=metric[0] / metric[1])
+    return metric[0] / metric[1]
+
+
+def t5_test(config, model, test_iter):
+    # test
+    model.load_state_dict(torch.load(config.save_path))
+    model.eval()
+    test_acc = t5_evaluate(model, test_iter, config.device)
+    print("test-acc:", test_acc)
 

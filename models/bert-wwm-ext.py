@@ -27,7 +27,7 @@ class Config(object):
         self.learning_rate = 2e-5                                       # 学习率
         self.pretrained_path = 'pretrained_models/chinese-bert-wwm-ext'
         self.tokenizer = BertTokenizer.from_pretrained(self.pretrained_path)
-        self.weight_decay = 0.1
+        self.weight_decay = 0.3
         self.seed = 42
 
 
