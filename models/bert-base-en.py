@@ -6,13 +6,18 @@ from transformers import BertTokenizer, BertForMultipleChoice
 
 class Config(object):
     """配置参数"""
-
     def __init__(self, dataset):
         self.model_type = 'en'  # 不同的类型 不同的数据处理方法
         self.model_name = 'bert-base-en'
-        self.train_path = 'dataset/' + dataset + '/BiRdQA_en_train.csv'  # 训练集
-        self.dev_path = 'dataset/' + dataset + '/BiRdQA_en_dev.csv'  # 验证集
-        self.test_path = 'dataset/' + dataset + '/BiRdQA_en_test.csv'  # 测试集
+        self.dataset = dataset
+        if dataset == 'BiRdQA':
+            self.train_path = 'dataset/' + dataset + '/BiRdQA_en_train.csv'  # 训练集
+            self.dev_path = 'dataset/' + dataset + '/BiRdQA_en_dev.csv'  # 验证集
+            self.test_path = 'dataset/' + dataset + '/BiRdQA_en_test.csv'  # 测试集
+        else:
+            self.train_path = 'dataset/' + dataset + '/rs_train.jsonl'  # 训练集
+            self.dev_path = 'dataset/' + dataset + '/rs_dev.jsonl'  # 验证集
+            self.test_path = 'dataset/' + dataset + '/rs_test_hidden.jsonl'  # 测试集
         self.save_path = 'saved_dict/' + self.model_name + '.pt'  # 模型训练结果
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')  # 设备
 
@@ -28,7 +33,6 @@ class Config(object):
 
 
 class Model(nn.Module):
-
     def __init__(self, config):
         super(Model, self).__init__()
         self.bert = BertForMultipleChoice.from_pretrained(config.pretrained_path)

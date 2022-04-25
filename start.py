@@ -1,6 +1,4 @@
 # coding: UTF-8
-import time
-import numpy as np
 from train_eval import *
 from importlib import import_module
 import argparse
@@ -20,6 +18,8 @@ if __name__ == '__main__':
     config = x.Config(dataset)
 
     print('=='*10, 'config', '=='*10)
+    print('model = ', config.model_name)
+    print('dataset = ', dataset)
     print('lr = ', config.learning_rate)
     print('wd = ', config.weight_decay)
     print('=='*25)
@@ -28,6 +28,10 @@ if __name__ == '__main__':
 
     start_time = time.time()
     print("Loading data...")
+
+
+
+
 
     if config.model_type == 't5':
         train_text, train_label, dev_text, dev_label,  test_text, test_label = build_t5_dataset(config)

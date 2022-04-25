@@ -18,7 +18,7 @@
 #=============en========================
 python start.py \
   --model bert-base-en \
-  --dataset BiRdQA
+  --dataset riddlesense
 
 #python start.py \
 #  --model bert-large-en \
