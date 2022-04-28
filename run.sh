@@ -16,9 +16,9 @@
 #  --dataset BiRdQA
 
 #=============en========================
-python start.py \
-  --model bert-base-en \
-  --dataset riddlesense
+#python start.py \
+#  --model bert-base-en \
+#  --dataset riddlesense
 
 #python start.py \
 #  --model bert-large-en \
@@ -32,9 +32,9 @@ python start.py \
 #  --model albert-xxl \
 #  --dataset BiRdQA
 
-#python start.py \
-#  --model unifiedqa-t5-large \
-#  --dataset BiRdQA
+python start.py \
+  --model unifiedqa-t5-large \
+  --dataset BiRdQA
 
 
 #  使用read命令达到类似bat中的pause命令效果

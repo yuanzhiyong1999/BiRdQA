@@ -53,7 +53,7 @@ def build_zh_dataset(config):
 
 
 def build_en_dataset(config):
-    def load_BiRdQA_dataset(path, pad_size=256, ):
+    def load_BiRdQA_dataset_bert(path, pad_size=256, ):
         text, target, corr = [], [], []
         data = pd.read_csv(path)
         for index, line in tqdm(data.iterrows()):
@@ -68,6 +68,31 @@ def build_en_dataset(config):
                                                      max_length=pad_size, padding='max_length', truncation=True,
                                                      return_attention_mask=True, return_tensors='pt')
                 group.append([token.input_ids.tolist(), token.token_type_ids.tolist(), token.attention_mask.tolist()])
+            group = torch.tensor(group)
+            text.append(group)
+            target.append(label)
+            corr = torch.tensor(target)
+
+        text = [i.tolist() for i in text]
+        text = torch.tensor(text)
+        question = torch.squeeze(text)
+        return question, corr
+
+    def load_BiRdQA_dataset_roberta(path, pad_size=256, ):
+        text, target, corr = [], [], []
+        data = pd.read_csv(path)
+        for index, line in tqdm(data.iterrows()):
+            riddle, choice0, choice1, choice2, choice3, choice4, label = line['riddle'], line['choice0'], \
+                                                                         line['choice1'], line['choice2'], \
+                                                                         line['choice3'], line['choice4'], \
+                                                                         line['label']
+            choice = [choice0, choice1, choice2, choice3, choice4]
+            group = []
+            for i in choice:
+                token = config.tokenizer.encode_plus(text=riddle, text_pair=i, add_special_tokens=True,
+                                                     max_length=pad_size, padding='max_length', truncation=True,
+                                                     return_attention_mask=True, return_tensors='pt')
+                group.append([token.input_ids.tolist(), token.attention_mask.tolist()])
             group = torch.tensor(group)
             text.append(group)
             target.append(label)
@@ -112,9 +137,14 @@ def build_en_dataset(config):
         return question, corr
 
     if config.dataset == 'BiRdQA':
-        train_text, train_label = load_BiRdQA_dataset(config.train_path, config.pad_size)
-        dev_text, dev_label = load_BiRdQA_dataset(config.dev_path, config.pad_size)
-        test_text, test_label = load_BiRdQA_dataset(config.test_path, config.pad_size)
+        if config.model_name != 'roberta-large':
+            train_text, train_label = load_BiRdQA_dataset_bert(config.train_path, config.pad_size)
+            dev_text, dev_label = load_BiRdQA_dataset_bert(config.dev_path, config.pad_size)
+            test_text, test_label = load_BiRdQA_dataset_bert(config.test_path, config.pad_size)
+        else:
+            train_text, train_label = load_BiRdQA_dataset_roberta(config.train_path, config.pad_size)
+            dev_text, dev_label = load_BiRdQA_dataset_roberta(config.dev_path, config.pad_size)
+            test_text, test_label = load_BiRdQA_dataset_roberta(config.test_path, config.pad_size)
     else:
         train_text, train_label = load_riddlesense_dataset(config.train_path, config.pad_size)
         dev_text, dev_label = load_riddlesense_dataset(config.dev_path, config.pad_size)
@@ -132,7 +162,7 @@ def build_t5_dataset(config):
                                                                          line['choice3'], line['choice4'], \
                                                                          line['label']
             choice = [choice0, choice1, choice2, choice3, choice4]
-            text = riddle + ' \\n' + ' (A) ' + choice0 + ' (B) ' + choice1 + ' (C) ' + \
+            text = riddle + ' \n' + ' (A) ' + choice0 + ' (B) ' + choice1 + ' (C) ' + \
                    choice2 + ' (D) ' + choice3 + ' (E) ' + choice4
 
             encoding = config.tokenizer(text, max_length=pad_size, padding="max_length",

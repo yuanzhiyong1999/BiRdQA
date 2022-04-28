@@ -114,12 +114,20 @@ def test(config, model, test_iter):
     print("test-acc:", test_acc)
 
 def t5_accuracy(y_hat, y):
-    y_hat = y_hat.argmax(dim=1)
-    num_correct = torch.eq(y_hat, y).sum().float().item()
+    num_correct = 0
+    for i in range(0, y_hat.shape[0]):
+        index = True  #标记是否成功
+        for j in range(0, y_hat.shape[1]):
+            if y_hat[i][j+1] == 1:
+                break
+            if y_hat[i][j+1] != y[i][j]:
+                index = False
+                break
+        if index:
+            num_correct = num_correct + 1
     return num_correct
 
 def t5_train(config, model, train_iter, dev_iter):
-    scaler = GradScaler()
     optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
     scheduler = get_cosine_schedule_with_warmup(optimizer, len(train_iter), config.num_epochs * len(train_iter))
     bast_acc = 0
@@ -131,18 +139,15 @@ def t5_train(config, model, train_iter, dev_iter):
         for i, (X, y) in loop:
             X = X.to(config.device)
             y = y.to(config.device)
-            with autocast():
-                loss, predict = model(X, y)
+            loss, predict, label_ids = model(X, y)
                 # predict = config.tokenizer.decode(predict, skip_special_tokens=True)
             optimizer.zero_grad()
-            scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
+            loss.backward()
+            optimizer.step()
             scheduler.step()
 
             train_loss = loss.item()
-            train_acc = t5_accuracy(predict, y)
-
+            train_acc = t5_accuracy(predict, label_ids)
             metric.add(train_loss, train_acc, y.shape[0])
 
             loop.set_description(f'TrainEpoch: [{epoch + 1}/{config.num_epochs}]')
@@ -167,10 +172,9 @@ def t5_evaluate(model, data_iter, device):
             X = X.to(device)
             y = y.to(device)
 
-            with autocast():
-                outputs = model(X)
+            _, predict, label_ids = model(X, y)
 
-            acc = accuracy(outputs, y)
+            acc = t5_accuracy(predict, label_ids)
             metric.add(acc, y.shape[0])
 
             loop.set_description(f'evaluate: ')
