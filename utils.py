@@ -68,6 +68,11 @@ def build_en_dataset(config):
                                                      max_length=pad_size, padding='max_length', truncation=True,
                                                      return_attention_mask=True, return_tensors='pt')
                 group.append([token.input_ids.tolist(), token.token_type_ids.tolist(), token.attention_mask.tolist()])
+            # choice_text = choice0 + '[SEP]' + choice1 + '[SEP]' + choice2 + '[SEP]' + choice3 + '[SEP]' + choice4
+            # token = config.tokenizer.encode_plus(text=riddle, text_pair=choice_text, add_special_tokens=True,
+            #                                      max_length=pad_size, padding='max_length', truncation=True,
+            #                                      return_attention_mask=True, return_tensors='pt')
+            # group.append([token.input_ids.tolist(), token.token_type_ids.tolist(), token.attention_mask.tolist()])
             group = torch.tensor(group)
             text.append(group)
             target.append(label)

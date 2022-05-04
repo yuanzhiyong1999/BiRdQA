@@ -5,6 +5,7 @@ from torch.cuda.amp import autocast, GradScaler
 from tqdm import tqdm
 from transformers import get_cosine_schedule_with_warmup
 
+
 # 权重初始化，默认xavier
 def init_network(model, method='xavier', exclude='embedding', seed=42):
     for name, w in model.named_parameters():
@@ -23,8 +24,10 @@ def init_network(model, method='xavier', exclude='embedding', seed=42):
             else:
                 pass
 
+
 class Accumulator:
     """在n个变量上累加  累加器"""
+
     def __init__(self, n):
         # 若n=2 则self.data = [0.0,0.0]
         self.data = [0.0] * n
@@ -39,10 +42,12 @@ class Accumulator:
     def __getitem__(self, idx):
         return self.data[idx]
 
+
 def accuracy(y_hat, y):
     y_hat = y_hat.argmax(dim=1)
     num_correct = torch.eq(y_hat, y).sum().float().item()
     return num_correct
+
 
 def train(config, model, train_iter, dev_iter):
     scaler = GradScaler()
@@ -113,19 +118,21 @@ def test(config, model, test_iter):
     test_acc = evaluate(model, test_iter, config.device)
     print("test-acc:", test_acc)
 
+
 def t5_accuracy(y_hat, y):
     num_correct = 0
     for i in range(0, y_hat.shape[0]):
-        index = True  #标记是否成功
+        index = True  # 标记是否成功
         for j in range(0, y_hat.shape[1]):
-            if y_hat[i][j+1] == 1:
+            if y_hat[i][j + 1] == 1:
                 break
-            if y_hat[i][j+1] != y[i][j]:
+            if y_hat[i][j + 1] != y[i][j]:
                 index = False
                 break
         if index:
             num_correct = num_correct + 1
     return num_correct
+
 
 def t5_train(config, model, train_iter, dev_iter):
     optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
@@ -140,7 +147,7 @@ def t5_train(config, model, train_iter, dev_iter):
             X = X.to(config.device)
             y = y.to(config.device)
             loss, predict, label_ids = model(X, y)
-                # predict = config.tokenizer.decode(predict, skip_special_tokens=True)
+            # predict = config.tokenizer.decode(predict, skip_special_tokens=True)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -188,4 +195,3 @@ def t5_test(config, model, test_iter):
     model.eval()
     test_acc = t5_evaluate(model, test_iter, config.device)
     print("test-acc:", test_acc)
-
