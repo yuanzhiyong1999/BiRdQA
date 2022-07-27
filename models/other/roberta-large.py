@@ -29,13 +29,13 @@ class Config(object):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')  # 设备
 
         self.num_choice = 5  # 选项数
-        self.num_epochs = 3  # epoch数
-        self.batch_size = 2  # mini-batch大小
+        self.num_epochs = 5  # epoch数
+        self.batch_size = 4  # mini-batch大小
         self.pad_size = 256  # 每句话处理成的长度(短填长切)
         self.learning_rate = 1e-5  # 学习率
-        self.pretrained_path = 'pretrained_models/roberta-large'
+        self.pretrained_path = 'roberta-large'
         self.tokenizer = RobertaTokenizer.from_pretrained(self.pretrained_path)
-        self.weight_decay = 1e-4
+        self.weight_decay = 0
         self.seed = 42
 
 
@@ -44,8 +44,6 @@ class Model(nn.Module):
     def __init__(self, config):
         super(Model, self).__init__()
         self.roberta = RobertaForMultipleChoice.from_pretrained(config.pretrained_path)
-        for param in self.roberta.parameters():
-            param.requires_grad = True
 
     def forward(self, x):
         x = torch.permute(x, (2, 0, 1, 3))

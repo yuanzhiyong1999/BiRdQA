@@ -20,6 +20,7 @@ if __name__ == '__main__':
     print('=='*10, 'config', '=='*10)
     print('model = ', config.model_name)
     print('dataset = ', dataset)
+    print('batch_size = ', config.batch_size)
     print('lr = ', config.learning_rate)
     print('wd = ', config.weight_decay)
     print('=='*25)
@@ -28,8 +29,6 @@ if __name__ == '__main__':
 
     start_time = time.time()
     print("Loading data...")
-
-
 
 
 
@@ -49,12 +48,15 @@ if __name__ == '__main__':
         t5_test(config, test_model, test_iter)
     else:
         if config.model_type == 'zh':
-            train_text, train_label, dev_text, dev_label,  test_text, test_label = build_zh_dataset(config)
+            # train_text, train_label, dev_text, dev_label,  test_text, test_label = build_zh_dataset(config)
+            train_text, train_label, dev_text, dev_label, test_text, test_label = build_my_zh_dataset(config)
         else:
             train_text, train_label, dev_text, dev_label, test_text, test_label = build_en_dataset(config)
+            # train_text, train_label, dev_text, dev_label, test_text, test_label = build_my_en_dataset(config)
+            # train_text, train_label, dev_text, dev_label = build_CSQA_dataset(config)
         train_iter = build_iterator((train_text, train_label), config.batch_size, True)
         dev_iter = build_iterator((dev_text, dev_label), config.batch_size)
-        test_iter = build_iterator((test_text, test_label), config.batch_size)
+        # test_iter = build_iterator((test_text, test_label), config.batch_size)
         time_dif = get_time_dif(start_time)
         print("Time usage:", time_dif)
 

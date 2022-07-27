@@ -30,15 +30,14 @@ class Config(object):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')  # 设备
 
         self.num_choice = 5  # 选项数
-        self.num_epochs = 3  # epoch数
-        self.batch_size = 1  # mini-batch大小
+        self.num_epochs = 5  # epoch数
+        self.batch_size = 16  # mini-batch大小
         self.pad_size = 150  # 每句话处理成的长度(短填长切)
-        self.learning_rate = 1e-5  # 学习率
-        self.pretrained_path = 'pretrained_models/unifiedqa-t5-large'
+        self.learning_rate = 1e-4  # 学习率
+        self.pretrained_path = 'allenai/unifiedqa-t5-large'
         self.tokenizer = T5Tokenizer.from_pretrained(self.pretrained_path)
-        self.weight_decay = 1e-4
+        self.weight_decay = 0
         self.seed = 42
-        # self.model = T5ForConditionalGeneration.from_pretrained(self.pretrained_path)
 
 
 class Model(nn.Module):
@@ -57,14 +56,14 @@ class Model(nn.Module):
         attention_mask = x[1]
         decoder_attention_mask = y[0]
         label_ids = y[1]
-
+        
         input_ids = input_ids.contiguous().view(-1, input_ids.size(-1))
         attention_mask = attention_mask.contiguous().view(-1, attention_mask.size(-1))
         decoder_attention_mask = decoder_attention_mask.contiguous().view(-1, decoder_attention_mask.size(-1))
         label_ids = label_ids.contiguous().view(-1, label_ids.size(-1))
-
+        
         loss = self.model(input_ids=input_ids, attention_mask=attention_mask,
                           decoder_attention_mask=decoder_attention_mask, labels=label_ids).loss
         predict = self.model.generate(input_ids)
-
+        
         return loss, predict, label_ids

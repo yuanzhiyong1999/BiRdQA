@@ -1,7 +1,10 @@
 # coding: UTF-8
+# 将bert输出的张量进行attention
+# 效果一般 35左右
 import torch
 import torch.nn as nn
 from transformers import BertTokenizer, BertModel
+from utils import attention
 
 
 class Config(object):
@@ -27,7 +30,7 @@ class Config(object):
         self.batch_size = 2  # mini-batch大小
         self.pad_size = 256  # 每句话处理成的长度(短填长切)
         self.learning_rate = 1e-5  # 学习率
-        self.pretrained_path = 'pretrained_models/bert-base-uncased'
+        self.pretrained_path = 'bert-base-uncased'
         self.tokenizer = BertTokenizer.from_pretrained(self.pretrained_path)
         self.weight_decay = 1e-4
         self.seed = 42
@@ -58,35 +61,53 @@ class Model(nn.Module):
         init_weights(self.classifier)
 
     def forward(self, x):
-        x = torch.permute(x, (2, 0, 1, 3))
         # 3*batch_size*n_choice*seq_len
+        x = torch.permute(x, (2, 0, 1, 3))
+
         input_ids = x[0]
         token_type_ids = x[1]
         attention_mask = x[2]
 
-        # batch_size = input_ids.shape[0]
+        batch_size = input_ids.shape[0]
         num_choices = input_ids.shape[1]
         input_ids = input_ids.view(-1, input_ids.size(-1))
         attention_mask = attention_mask.view(-1, attention_mask.size(-1))
         token_type_ids = token_type_ids.view(-1, token_type_ids.size(-1))
-
         out = self.bert(input_ids=input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids)
-        pooled_output = out[1]
+        # [batch_size*num_choices,seq_len,hidden_size]
+        output_all_encoded_layers = out[0]
+        # print(output_all_encoded_layers.shape)
+        reshaped_out = output_all_encoded_layers.view(batch_size, num_choices, input_ids.size(-1), -1)
+        # print(reshaped_out[0][:][:10])
 
-        # handle_pooler_output = torch.tensor([]).to('cuda')
+        # print(torch.cat(torch.chunk(reshaped_out, 6, 1)[1:], 1).shape)
+        # chunk用来等分 将reshaped_out在第一维上等分为6份
+        # q = torch.chunk(reshaped_out, 6, 1)[0]
+        # a = torch.cat(torch.chunk(reshaped_out, 6, 1)[1:], 1)
+        # choice_out = torch.tensor([]).to('cuda')
         # for i in range(batch_size):
-        #     # # 每次取出一个batch数据
-        #     # batch_data = pooled_output[i*num_choices:(i+1)*num_choices]
-        #     # temp = batch_data[-1]
-        #     # for j in range(num_choices-1):
-        #     #     batch_data[j] = batch_data[j] + temp
-        #     index = (i + 1) * num_choices - 1
+        #     q = reshaped_out[1][0]
         #     temp = torch.tensor([]).to('cuda')
         #     for j in range(1, num_choices):
-        #         x = torch.cat((pooled_output[index - j], pooled_output[index]))
-        #         temp = torch.cat((temp, x.unsqueeze(0)))
-        #     handle_pooler_output = torch.cat((handle_pooler_output, temp))
-        pooled_output = self.dropout(pooled_output)
-        logits = self.classifier(pooled_output)
-        reshaped_logits = logits.view(-1, num_choices)
+        #         a = reshaped_out[i][j]
+        #         v, _ = attention(a, q, q)
+        #         temp = torch.cat((temp, v.unsqueeze(0)))
+        #     choice_out = torch.cat((choice_out, temp.unsqueeze(0)))
+
+        # mask = torch.zeros(2, 5, 256, 256)
+
+        q = torch.index_select(reshaped_out, dim=1, index=torch.tensor([0]).to('cuda'))
+        a = torch.index_select(reshaped_out, dim=1, index=torch.tensor([1, 2, 3, 4, 5]).to('cuda'))
+
+        attention_mask = attention_mask.view(batch_size, num_choices, attention_mask.size(-1))
+        mask = torch.index_select(attention_mask, dim=1, index=torch.tensor([0]).to('cuda'))
+        mask = torch.cat((mask, torch.zeros(batch_size, 255, 256).to('cuda')), 1)
+        mask = torch.unsqueeze(mask, 1)
+
+        v, _ = attention(a, q, q, mask)
+        v = self.dropout(v)
+        ans = torch.index_select(v, dim=2, index=torch.tensor([0]).to('cuda'))
+
+        logits = self.classifier(ans)
+        reshaped_logits = logits.view(-1, num_choices - 1)
         return reshaped_logits

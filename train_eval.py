@@ -4,6 +4,7 @@ import torch.nn as nn
 from torch.cuda.amp import autocast, GradScaler
 from tqdm import tqdm
 from transformers import get_cosine_schedule_with_warmup
+from torch.nn.functional import softmax
 
 
 # 权重初始化，默认xavier

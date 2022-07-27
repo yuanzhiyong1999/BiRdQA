@@ -1,4 +1,6 @@
 # coding: UTF-8
+import math
+
 import numpy as np
 import pandas as pd
 import torch
@@ -6,6 +8,7 @@ from torch.utils import data
 from tqdm import tqdm
 import time
 from datetime import timedelta
+import torch.nn.functional as F
 
 
 def fixed_seed(seed):
@@ -227,3 +230,173 @@ def get_time_dif(start_time):
     end_time = time.time()
     time_dif = end_time - start_time
     return timedelta(seconds=int(round(time_dif)))
+
+
+def attention(query, key, value, mask=None, dropout=None):
+    d_k = query.size(-1)
+    scores = torch.matmul(query, key.transpose(-2, -1)) / math.sqrt(d_k)
+
+    if mask is not None:
+        scores = scores.masked_fill(mask == 0, -1e9)
+
+    p_attn = F.softmax(scores, dim=-1)
+
+    if dropout is not None:
+        p_attn = dropout(p_attn)
+
+    return torch.matmul(p_attn, value), p_attn
+
+
+def build_my_en_dataset(config):
+    def load_BiRdQA_dataset_bert_attention(path, pad_size=256, ):
+        text, target, corr = [], [], []
+        data = pd.read_csv(path)
+        for index, line in tqdm(data.iterrows()):
+            riddle, choice0, choice1, choice2, choice3, choice4, label = line['riddle'], line['choice0'], \
+                                                                         line['choice1'], line['choice2'], \
+                                                                         line['choice3'], line['choice4'], \
+                                                                         line['label']
+            choice = [choice0, choice1, choice2, choice3, choice4]
+            group = []
+            q_token = config.tokenizer.encode_plus(text=riddle, add_special_tokens=True,
+                                                   max_length=pad_size, padding='max_length', truncation=True,
+                                                   return_attention_mask=True, return_tensors='pt')
+            group.append([q_token.input_ids.tolist(), q_token.token_type_ids.tolist(), q_token.attention_mask.tolist()])
+            for i in choice:
+                token = config.tokenizer.encode_plus(text=i, add_special_tokens=True,
+                                                     max_length=pad_size, padding='max_length', truncation=True,
+                                                     return_attention_mask=True, return_tensors='pt')
+                group.append([token.input_ids.tolist(), token.token_type_ids.tolist(), token.attention_mask.tolist()])
+
+            group = torch.tensor(group)
+            text.append(group)
+            target.append(label)
+            corr = torch.tensor(target)
+
+        text = [i.tolist() for i in text]
+        text = torch.tensor(text)
+        question = torch.squeeze(text)
+        return question, corr
+
+    def load_BiRdQA_dataset_bert_56(path, pad_size=256, ):
+        text, target, corr = [], [], []
+        data = pd.read_csv(path)
+        for index, line in tqdm(data.iterrows()):
+            riddle, choice0, choice1, choice2, choice3, choice4, label = line['riddle'], line['choice0'], \
+                                                                         line['choice1'], line['choice2'], \
+                                                                         line['choice3'], line['choice4'], \
+                                                                         line['label']
+            choice = [choice0, choice1, choice2, choice3, choice4]
+            group = []
+            for i in choice:
+                token = config.tokenizer.encode_plus(text=riddle, text_pair=i, add_special_tokens=True,
+                                                     max_length=pad_size, padding='max_length', truncation=True,
+                                                     return_attention_mask=True, return_tensors='pt')
+                group.append([token.input_ids.tolist(), token.token_type_ids.tolist(), token.attention_mask.tolist()])
+            choice_text = choice0 + '[SEP]' + choice1 + '[SEP]' + choice2 + '[SEP]' + choice3 + '[SEP]' + choice4
+            token = config.tokenizer.encode_plus(text=riddle, text_pair=choice_text, add_special_tokens=True,
+                                                 max_length=pad_size, padding='max_length', truncation=True,
+                                                 return_attention_mask=True, return_tensors='pt')
+            group.append([token.input_ids.tolist(), token.token_type_ids.tolist(), token.attention_mask.tolist()])
+            group = torch.tensor(group)
+            text.append(group)
+            target.append(label)
+            corr = torch.tensor(target)
+
+        text = [i.tolist() for i in text]
+        text = torch.tensor(text)
+        question = torch.squeeze(text)
+        return question, corr
+
+    train_text, train_label = load_BiRdQA_dataset_bert_56(config.train_path, config.pad_size)
+    dev_text, dev_label = load_BiRdQA_dataset_bert_56(config.dev_path, config.pad_size)
+    test_text, test_label = load_BiRdQA_dataset_bert_56(config.test_path, config.pad_size)
+
+    return train_text, train_label, dev_text, dev_label, test_text, test_label
+
+
+def build_my_zh_dataset(config):
+    def load_dataset(path, pad_size=256, ):
+        text, target, corr = [], [], []
+        data = pd.read_csv(path)
+
+        for index, line in tqdm(data.iterrows()):
+            riddle, choice0, choice1, choice2, choice3, choice4, label = line['riddle'], line['choice0'], \
+                                                                         line['choice1'], line['choice2'], \
+                                                                         line['choice3'], line['choice4'], \
+                                                                         line['label']
+            choice = [choice0, choice1, choice2, choice3, choice4]
+
+            # 去掉（打一物）这样的提示
+            riddle = riddle.split(' ')[0]
+            group = []
+            for i in choice:
+                token = config.tokenizer.encode_plus(text=riddle, text_pair=i, add_special_tokens=True,
+                                                     max_length=pad_size, padding='max_length', truncation=True,
+                                                     return_attention_mask=True, return_tensors='pt')
+                group.append([token.input_ids.tolist(), token.token_type_ids.tolist(), token.attention_mask.tolist()])
+            choice_text = choice0 + '[SEP]' + choice1 + '[SEP]' + choice2 + '[SEP]' + choice3 + '[SEP]' + choice4
+            token = config.tokenizer.encode_plus(text=riddle, text_pair=choice_text, add_special_tokens=True,
+                                                 max_length=pad_size, padding='max_length', truncation=True,
+                                                 return_attention_mask=True, return_tensors='pt')
+            group.append([token.input_ids.tolist(), token.token_type_ids.tolist(), token.attention_mask.tolist()])
+
+            group = torch.tensor(group)
+            text.append(group)
+            target.append(label)
+            corr = torch.tensor(target)
+
+        text = [i.tolist() for i in text]
+        text = torch.tensor(text)
+        question = torch.squeeze(text)
+
+        return question, corr
+
+    train_text, train_label = load_dataset(config.train_path, config.pad_size)
+    dev_text, dev_label = load_dataset(config.dev_path, config.pad_size)
+    test_text, test_label = load_dataset(config.test_path, config.pad_size)
+    return train_text, train_label, dev_text, dev_label, test_text, test_label
+
+
+def build_CSQA_dataset(config):
+    def load_dataset(path, pad_size=256, ):
+        text, target, corr = [], [], []
+        dict = {"A": "0", "B": "1", "C": "2", "D": "3", "E": "4", "hidden": "5"}
+        data = pd.read_json(path, lines=True)
+        for index, line in tqdm(data.iterrows()):
+            riddle, choice0, choice1, choice2, choice3, choice4, label = line.question['stem'], \
+                                                                         line.question['choices'][0]['text'], \
+                                                                         line.question['choices'][1]['text'], \
+                                                                         line.question['choices'][2]['text'], \
+                                                                         line.question['choices'][3]['text'], \
+                                                                         line.question['choices'][4]['text'], \
+                                                                         line.answerKey
+            for key, value in dict.items():
+                label = label.replace(key, value)
+            label = int(label)
+            choice = [choice0, choice1, choice2, choice3, choice4]
+            group = []
+            for i in choice:
+                token = config.tokenizer.encode_plus(text=riddle, text_pair=i, add_special_tokens=True,
+                                                     max_length=pad_size, padding='max_length', truncation=True,
+                                                     return_attention_mask=True, return_tensors='pt')
+                group.append([token.input_ids.tolist(), token.token_type_ids.tolist(), token.attention_mask.tolist()])
+            choice_text = choice0 + '[SEP]' + choice1 + '[SEP]' + choice2 + '[SEP]' + choice3 + '[SEP]' + choice4
+            token = config.tokenizer.encode_plus(text=riddle, text_pair=choice_text, add_special_tokens=True,
+                                                 max_length=pad_size, padding='max_length', truncation=True,
+                                                 return_attention_mask=True, return_tensors='pt')
+            group.append([token.input_ids.tolist(), token.token_type_ids.tolist(), token.attention_mask.tolist()])
+            group = torch.tensor(group)
+            text.append(group)
+            target.append(label)
+            corr = torch.tensor(target)
+
+        text = [i.tolist() for i in text]
+        text = torch.tensor(text)
+        question = torch.squeeze(text)
+        return question, corr
+
+    train_text, train_label = load_dataset(config.train_path, config.pad_size)
+    dev_text, dev_label = load_dataset(config.dev_path, config.pad_size)
+    # test_text, test_label = load_dataset(config.test_path, config.pad_size)
+    return train_text, train_label, dev_text, dev_label

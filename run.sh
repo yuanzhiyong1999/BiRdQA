@@ -1,6 +1,6 @@
 #==========zh=======================
 #python start.py \
-#  --model bert-base-zh \
+#  --model mine.bert-base-zh-56 \
 #  --dataset BiRdQA
 
 #python start.py \
@@ -17,7 +17,7 @@
 
 #=============en========================
 python start.py \
-  --model bert-base-en \
+  --model other.albert-xxl \
   --dataset BiRdQA
 
 #python start.py \
