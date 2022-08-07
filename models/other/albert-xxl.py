@@ -21,6 +21,10 @@ class Config(object):
             self.train_path = 'dataset/' + dataset + '/BiRdQA_en_train.csv'  # 训练集
             self.dev_path = 'dataset/' + dataset + '/BiRdQA_en_dev.csv'  # 验证集
             self.test_path = 'dataset/' + dataset + '/BiRdQA_en_test.csv'  # 测试集
+        elif dataset == 'CSQA':
+            self.train_path = 'dataset/' + dataset + '/train_rand_split.jsonl'  # 训练集
+            self.dev_path = 'dataset/' + dataset + '/dev_rand_split.jsonl'  # 验证集
+            self.test_path = 'dataset/' + dataset + '/test_rand_split_no_answers.jsonl'  # 测试集
         else:
             self.train_path = 'dataset/' + dataset + '/rs_train.jsonl'  # 训练集
             self.dev_path = 'dataset/' + dataset + '/rs_dev.jsonl'  # 验证集

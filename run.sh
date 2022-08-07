@@ -18,7 +18,7 @@
 #=============en========================
 python start.py \
   --model other.albert-xxl \
-  --dataset BiRdQA
+  --dataset CSQA
 
 #python start.py \
 #  --model bert-large-en \
